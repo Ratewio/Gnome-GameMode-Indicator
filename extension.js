@@ -45,6 +45,8 @@ const GameModeIndicator = GObject.registerClass(
                 )
             });
 
+            const cancellable = new Gio.Cancellable();
+
             Gio.DBusProxy.new_for_bus(
                 Gio.BusType.SESSION,
                 Gio.DBusProxyFlags.DO_NOT_AUTO_START,
@@ -52,7 +54,7 @@ const GameModeIndicator = GObject.registerClass(
                 DBUS_NAME,
                 DBUS_PATH,
                 DBUS_NAME,
-                new Gio.Cancellable(),
+                cancellable,
                 (source, result) => {
                     this._proxy = Gio.DBusProxy.new_for_bus_finish(result);
 
@@ -69,8 +71,12 @@ const GameModeIndicator = GObject.registerClass(
             );
 
             this.connect('destroy', () => {
+                cancellable.cancel();
+
                 if (this._proxy)
                     this._proxy.disconnect(this._signalId);
+
+                this._proxy = null;
             });
         }
 
@@ -95,5 +101,6 @@ export default class GameModeExtension extends Extension {
 
     disable() {
         this._indicator.destroy();
+        this._indicator = null;
     }
 }
