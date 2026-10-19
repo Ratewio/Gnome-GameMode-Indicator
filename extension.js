@@ -28,9 +28,6 @@ const DBUS_PATH = '/com/feralinteractive/GameMode';
 
 const GameModeIndicator = GObject.registerClass(
     class GameModeIndicator extends QuickSettings.SystemIndicator {
-        _proxy;
-        _signalId;
-
         constructor(extensionPath) {
             super();
 
@@ -44,40 +41,6 @@ const GameModeIndicator = GObject.registerClass(
                     `${extensionPath}/icons/gamepad-symbolic.svg`
                 )
             });
-
-            const cancellable = new Gio.Cancellable();
-
-            Gio.DBusProxy.new_for_bus(
-                Gio.BusType.SESSION,
-                Gio.DBusProxyFlags.DO_NOT_AUTO_START,
-                null,
-                DBUS_NAME,
-                DBUS_PATH,
-                DBUS_NAME,
-                cancellable,
-                (source, result) => {
-                    this._proxy = Gio.DBusProxy.new_for_bus_finish(result);
-
-                    this._signalId = this._proxy.connect(
-                        'g-properties-changed',
-                        (proxy, changed) => {
-                            if (changed.lookup_value('ClientCount', null) !== null)
-                                this._sync();
-                        }
-                    );
-
-                    this._sync()
-                }
-            );
-
-            this.connect('destroy', () => {
-                cancellable.cancel();
-
-                if (this._proxy)
-                    this._proxy.disconnect(this._signalId);
-
-                this._proxy = null;
-            });
         }
 
         _sync() {
@@ -90,16 +53,44 @@ const GameModeIndicator = GObject.registerClass(
     });
 
 export default class GameModeExtension extends Extension {
-    _indicator;
-
     enable() {
         this._indicator = new GameModeIndicator(this.path);
+
+        this._cancellable = new Gio.Cancellable();
+
+        Gio.DBusProxy.new_for_bus(
+            Gio.BusType.SESSION,
+            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
+            null,
+            DBUS_NAME,
+            DBUS_PATH,
+            DBUS_NAME,
+            cancellable,
+            (source, result) => {
+                this._proxy = Gio.DBusProxy.new_for_bus_finish(result);
+
+                this._signalId = this._proxy.connect(
+                    'g-properties-changed',
+                    (proxy, changed) => {
+                        if (changed.lookup_value('ClientCount', null) !== null)
+                            this._sync();
+                    }
+                );
+
+                this._sync()
+            }
+        );
 
         Main.panel.statusArea.quickSettings
             .addExternalIndicator(this._indicator);
     }
 
     disable() {
+        this._cancellable.cancel();s
+
+        this._proxy.disconnect(this._signalId);
+        this._proxy = null;
+
         this._indicator.destroy();
         this._indicator = null;
     }
