@@ -4,5 +4,6 @@
   "uuid": "gamemodeindicator@ratewio.github.io",
   "shell-version": [
     "51"
-  ]
+  ],
+  "url": "https://github.com/Ratewio/Gnome-GameMode-Indicator"
 }
