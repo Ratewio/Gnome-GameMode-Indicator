@@ -43,13 +43,10 @@ const GameModeIndicator = GObject.registerClass(
             });
         }
 
-        _sync() {
-            const count =
-                this._proxy?.get_cached_property('ClientCount')?.deep_unpack()
-                ?? 0;
-
-            this._icon.visible = count !== 0;
+        setActive(active){
+            this._icon.visible = active;
         }
+
     });
 
 export default class GameModeExtension extends Extension {
@@ -65,7 +62,7 @@ export default class GameModeExtension extends Extension {
             DBUS_NAME,
             DBUS_PATH,
             DBUS_NAME,
-            cancellable,
+            this._cancellable,
             (source, result) => {
                 this._proxy = Gio.DBusProxy.new_for_bus_finish(result);
 
@@ -86,12 +83,20 @@ export default class GameModeExtension extends Extension {
     }
 
     disable() {
-        this._cancellable.cancel();s
+        this._cancellable.cancel();
 
         this._proxy.disconnect(this._signalId);
         this._proxy = null;
 
         this._indicator.destroy();
         this._indicator = null;
+    }
+
+    _sync() {
+        const count =
+            this._proxy?.get_cached_property('ClientCount')?.deep_unpack()
+            ?? 0;
+
+        this._indicator.setActive(count !== 0);
     }
 }
