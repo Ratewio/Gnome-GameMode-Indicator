@@ -1,0 +1,8 @@
+{
+  "name": "GameMode Indicator",
+  "description": "Adds a GameMode indicator to the quick settings",
+  "uuid": "gamemodeindicator@ratewio.github.io",
+  "shell-version": [
+    "51"
+  ]
+}
